@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Laboratory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section label {
+            display: block;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .prompt-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .prompt-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .button-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            min-width: 200px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output-section {
+            margin-top: 30px;
+        }
+
+        .output-section label {
+            display: block;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .output-display {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            font-size: 16px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: inherit;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .error {
+            background-color: #fee;
+            border-color: #fcc;
+            color: #c33;
+        }
+
+        .success {
+            background-color: #efe;
+            border-color: #cfc;
+        }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #666;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Prompt Laboratory</h1>
+            <p>Experiment with AI prompts and see instant results</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <label for="promptInput">Input Prompt:</label>
+                <textarea 
+                    id="promptInput" 
+                    class="prompt-input" 
+                    placeholder="Enter your AI prompt here... For example: 'Write a short poem about technology' or 'Explain quantum computing in simple terms'"
+                ></textarea>
+            </div>
+            
+            <div class="button-section">
+                <button id="submitBtn" class="submit-btn">
+                    🚀 Process Prompt
+                </button>
+            </div>
+            
+            <div class="loading" id="loading">
+                ⏳ Processing your prompt...
+            </div>
+            
+            <div class="output-section">
+                <label for="outputDisplay">AI Response:</label>
+                <div id="outputDisplay" class="output-display">
+                    Your AI response will appear here...
+                </div>
+                <div id="timestamp" class="timestamp"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const promptInput = document.getElementById('promptInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const outputDisplay = document.getElementById('outputDisplay');
+        const loading = document.getElementById('loading');
+        const timestamp = document.getElementById('timestamp');
+
+        // 提交按钮点击事件
+        submitBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt) {
+                alert('Please enter a prompt first!');
+                promptInput.focus();
+                return;
+            }
+            
+            await processPrompt(prompt);
+        });
+
+        // 回车键提交（Ctrl+Enter）
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                submitBtn.click();
+            }
+        });
+
+        // 处理 Prompt 的主要函数
+        async function processPrompt(prompt) {
+            try {
+                // 显示加载状态
+                setLoadingState(true);
+                
+                // 发送请求到后端
+                const response = await fetch('/api/prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 显示成功结果
+                    displayResult(data.result, 'success');
+                    timestamp.textContent = `Processed at: ${new Date(data.timestamp).toLocaleString()}`;
+                } else {
+                    // 显示错误
+                    displayResult(data.error || 'Unknown error occurred', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                displayResult(`Network error: ${error.message}`, 'error');
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        // 设置加载状态
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                loading.classList.add('show');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Processing...';
+                outputDisplay.textContent = '';
+                outputDisplay.className = 'output-display';
+                timestamp.textContent = '';
+            } else {
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Process Prompt';
+            }
+        }
+
+        // 显示结果
+        function displayResult(result, type = 'success') {
+            outputDisplay.textContent = result;
+            outputDisplay.className = `output-display ${type}`;
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            promptInput.focus();
+            
+            // 检查服务器健康状态
+            fetch('/api/health')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server status:', data.status);
+                })
+                .catch(error => {
+                    console.warn('Server health check failed:', error);
+                });
+        });
+    </script>
+</body>
+</html>
